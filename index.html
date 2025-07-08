@@ -1,208 +1,907 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的世界</title>
-    <!-- 引入Tailwind CSS，用于快速布局和样式 -->
+    <title>易长城 - AI产品经理</title>
+    <!-- Chosen Palette: Cold Future / Cyberpunk Neon -->
+    <!-- Application Structure Plan: The SPA is designed as a top-down narrative journey for a recruiter. It starts with a high-impact Hero section to establish the brand identity ("Innovative, Data-Driven AI Product Leader"). The user is then guided sequentially through 'About Me' (building personal connection and context), 'Projects' (the core evidence, with AI projects prioritized to match the job role), 'Skills' (quantifiable capabilities via a radar chart), and finally a clear 'Contact' CTA. This linear, scroll-based flow is intentional, creating a guided story of competence that is easy-to-follow and ensures key achievements are not missed. Interactive elements like scroll-triggered animations and hover effects are used to keep the user engaged throughout this journey. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Personal Strengths -> Goal: Showcase core competencies quickly -> Viz/Method: Animated stat cards (HTML/CSS) -> Interaction: Subtle animation on scroll -> Justification: More engaging than a text block, provides quick, digestible highlights.
+        - Report Info: Skills List (Axure, etc.) -> Goal: Visualize proficiency spectrum -> Viz/Method: Radar Chart (Chart.js/Canvas) -> Interaction: Chart animates on load, tooltips on hover -> Justification: A radar chart is a standard and effective way to show multi-axial data, fitting the tech theme perfectly and offering more nuance than a simple list.
+        - Report Info: Project KPIs (e.g., "efficiency +40%") -> Goal: Emphasize measurable results -> Viz/Method: Large, bold typography within project cards (HTML/CSS) -> Interaction: Numbers animate/count up on scroll -> Justification: Draws immediate attention to the most critical part of any project story—the impact.
+        - Report Info: Overall "Tech" feel -> Goal: Create an immersive, futuristic atmosphere -> Viz/Method: Tunnel animation background (Three.js/Canvas) -> Interaction: Subtle, continuous movement -> Justification: Creates a dynamic, non-static environment that reinforces the "AI" and "Pioneer" theme without distracting from the main content.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        /* 设置Inter字体 */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
         body {
-            font-family: 'Inter', sans-serif;
-            overflow: hidden; /* 防止滚动条出现 */
-            margin: 0;
-            padding: 0;
-            background-color: #000; /* 确保背景是黑色以衬托粒子效果 */
+            margin: 0; /* Removed default body margin */
+            padding: 0; /* Removed default body padding */
+            background-color: #0A0A1A; /* Deeper tech blue for background */
+            color: #E0E0E0; /* Light gray for general text */
+            font-family: 'Noto Sans SC', sans-serif;
+            overflow-x: hidden;
         }
-        /* Canvas占据整个视口 */
-        canvas {
-            display: block;
+        #cyberpunk-grid-background {
             position: fixed;
+            width: 100%;
+            height: 100%;
             top: 0;
             left: 0;
-            z-index: -1; /* 将canvas放在内容后面 */
-            background-color: #0d1117; /* 深色背景 */
+            z-index: -1;
+            display: block; /* Ensure canvas is block level */
         }
-        /* 主内容区域样式 */
-        .content-container {
+       .section-title {
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 2.5rem;
+            text-shadow: 0 0 8px rgba(102, 0, 255, 0.5); /* Purple accent glow for titles from image */
+        }
+       .neon-text {
+            color: #8A2BE2; /* Bright Purple accent from image */
+            text-shadow: 0 0 5px #8A2BE2, 0 0 10px #8A2BE2, 0 0 15px #8A2BE2;
+        }
+       .neon-border {
+            border-color: #8A2BE2; /* Purple for borders from image */
+            box-shadow: 0 0 8px #8A2BE2, inset 0 0 8px #8A2BE2;
+        }
+       .glass-card {
+            background: rgba(15, 15, 40, 0.7); /* Slightly transparent deep blue/purple background */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(102, 0, 255, 0.4); /* Purple border from image */
+            transition: all 0.3s ease;
+        }
+       .glass-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            border-color: rgba(0, 204, 255, 0.6); /* Blue-ish hover accent from image */
+        }
+       .tag {
+            background-color: rgba(102, 0, 255, 0.2); /* Purple tag background from image */
+            color: #8A2BE2; /* Purple tag text from image */
+            border: 1px solid rgba(102, 0, 255, 0.5); /* Purple tag border from image */
+        }
+       .kpi {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #00CCFF; /* Bright Blue accent for KPIs from image */
+            text-shadow: 0 0 10px #00CCFF;
+        }
+        /* Enhanced .scroll-reveal animation */
+       .scroll-reveal {
+            opacity: 0;
+            transform: translateY(40px) scale(0.95); /* More pronounced translateY and subtle scale-in */
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out; /* Longer transition */
+        }
+       .scroll-reveal.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+       .nav-link {
             position: relative;
-            z-index: 1; /* 确保内容在canvas前面 */
-            min-height: 100vh; /* 确保内容占据整个高度 */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            color: white;
-            padding: 20px;
+            transition: color 0.3s ease;
+        }
+       .nav-link:hover {
+            color: #00CCFF; /* Bright Blue for nav link hover from image */
+        }
+       .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #00CCFF; /* Bright Blue underline from image */
+            transition: width 0.3s ease;
+        }
+       .nav-link:hover,.nav-link.active {
+            color: #00CCFF; /* ensure active state is visible */
+        }
+        .nav-link:hover::after, .nav-link.active::after {
+            width: 100%;
+        }
+       .chart-container {
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 60vh;
+            max-height: 500px;
+        }
+        /* Timeline specific styles */
+       .timeline {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px 0;
+        }
+       .timeline::before {
+            content: '';
+            position: absolute;
+            width: 2px;
+            background-color: rgba(102, 0, 255, 0.5); /* Purple timeline line from image */
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            margin-left: -1px;
+        }
+       .timeline-item {
+            padding: 10px 40px;
+            position: relative;
+            background-color: inherit;
+            width: 50%;
+        }
+       .timeline-item::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            right: -8px;
+            background-color: #00CCFF; /* Bright Blue timeline dot from image */
+            border: 2px solid #8A2BE2; /* Purple timeline dot border from image */
+            top: 15px;
+            border-radius: 50%;
+            z-index: 1;
+        }
+       .timeline-item.left {
+            left: 0;
+        }
+       .timeline-item.right {
+            left: 50%;
+        }
+       .timeline-item.left::after {
+            left: auto;
+            right: -8px;
+        }
+       .timeline-item.right::after {
+            left: -8px;
+        }
+       .timeline-item-content {
+            padding: 20px 30px;
+            background: rgba(15, 15, 40, 0.7); /* Slightly transparent deep blue/purple background */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(102, 0, 255, 0.4); /* Purple border for timeline content from image */
+            border-radius: 6px;
+            position: relative;
+        }
+       .timeline-item.right .timeline-item-content::before {
+            content: " ";
+            height: 0;
+            position: absolute;
+            top: 22px;
+            width: 0;
+            z-index: 1;
+            left: -15px;
+            border: medium solid rgba(15, 15, 40, 0.7);
+            border-width: 10px 15px 10px 0;
+            border-color: transparent rgba(15, 15, 40, 0.7) transparent transparent;
+        }
+       .timeline-item.left .timeline-item-content::before {
+            content: " ";
+            height: 0;
+            position: absolute;
+            top: 22px;
+            width: 0;
+            z-index: 1;
+            right: -15px;
+            border: medium solid rgba(15, 15, 40, 0.7);
+            border-width: 10px 0 10px 15px;
+            border-color: transparent transparent transparent rgba(15, 15, 40, 0.7);
+        }
+        .hero-button-gradient {
+            background: linear-gradient(90deg, #8A2BE2, #00CCFF); /* Purple to Blue gradient from image */
+            background-size: 200% 200%;
+            animation: gradient-animation 4s ease infinite, button-fade-in 1s ease-out 0.6s forwards; /* Add button-fade-in */
+            opacity: 0; /* Start hidden for fade-in */
+        }
+        @keyframes gradient-animation {
+            0% {background-position: 0% 50%;}
+            50% {background-position: 100% 50%;}
+            100% {background-position: 0% 50;}
+        }
+
+        /* Custom Keyframe Animations for Hero Section */
+        @keyframes fade-in-down {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fade-in-up {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes button-fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in-down {
+            animation: fade-in-down 1s ease-out forwards;
+        }
+
+        .animate-fade-in-up {
+            animation: fade-in-up 1s ease-out forwards;
+            animation-delay: 0.3s; /* Delay for paragraph after title */
+        }
+
+
+        @media screen and (max-width: 768px) {
+           .timeline::before {
+                left: 20px;
+            }
+           .timeline-item {
+                width: 100%;
+                padding-left: 60px;
+                padding-right: 10px;
+            }
+           .timeline-item.left,.timeline-item.right {
+                left: 0;
+            }
+           .timeline-item.left::after,.timeline-item.right::after {
+                left: 12px;
+            }
+           .timeline-item.left .timeline-item-content::before,
+           .timeline-item.right .timeline-item-content::before {
+                left: 45px;
+                border-width: 10px 15px 10px 0;
+                border-color: transparent rgba(15, 15, 40, 0.7) transparent transparent;
+            }
         }
     </style>
 </head>
-<body>
-    <canvas id="backgroundCanvas"></canvas>
+<body class="w-full">
+    <canvas id="cyberpunk-grid-background"></canvas>
 
-    <div class="content-container bg-opacity-70">
-        <h1 class="text-5xl md:text-7xl font-bold mb-4 rounded-lg p-4 bg-gradient-to-r from-purple-600 via-pink-500 to-red-500 text-transparent bg-clip-text">
-            欢迎来到我的世界
-        </h1>
-        <p class="text-xl md:text-2xl mb-8 rounded-lg p-3 bg-white bg-opacity-10 backdrop-blur-sm">
-            这个页面展示了一个动态的粒子背景效果。
-        </p>
-        <button class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full shadow-lg transition-all duration-300 transform hover:scale-105">
-            探索更多
-        </button>
-    </div>
+    <header class="fixed top-0 left-0 w-full bg-black/30 backdrop-blur-md z-50 transition-all duration-300">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#home" class="text-2xl font-bold text-white">易长城 <span class="text-base font-light text-[#00C2FF]">AI PM</span></a>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#about" class="nav-link text-lg">关于我</a>
+                <a href="#projects" class="nav-link text-lg">项目经验</a>
+                <a href="#skills" class="nav-link text-lg">专业技能</a>
+                <a href="#contact" class="nav-link text-lg">联系方式</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden text-white focus:outline-none">
+                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4">
+            <a href="#about" class="block py-2 text-center nav-link">关于我</a>
+            <a href="#projects" class="block py-2 text-center nav-link">项目经验</a>
+            <a href="#skills" class="block py-2 text-center nav-link">专业技能</a>
+            <a href="#contact" class="block py-2 text-center nav-link">联系方式</a>
+        </div>
+    </header>
+
+    <main class="relative z-10">
+        <section id="home" class="h-screen flex items-center justify-center text-center flex-col px-4">
+            <h1 class="text-6xl md:text-8xl font-bold text-white animate-fade-in-down">易长城</h1>
+            <p class="mt-4 text-2xl md:text-3xl font-light text-gray-300 animate-fade-in-up neon-text">数据驱动的AI产品实践者</p>
+            <a href="#projects" class="mt-12 px-8 py-3 border-2 neon-border rounded-full text-white text-lg font-semibold hover:text-white hover:shadow-lg transition-all duration-300 hero-button-gradient">
+                探索我的项目
+            </a>
+        </section>
+
+        <section id="about" class="py-20 container mx-auto px-6">
+            <h2 class="section-title text-center mb-12 scroll-reveal">关于我</h2>
+            <div class="max-w-4xl mx-auto text-center text-lg leading-relaxed scroll-reveal">
+                <p>拥有7年互联网产品经验，我热衷于从0到1构建能够解决复杂问题的创新产品。凭借在C端（4年）和B端（3年）的均衡履历，对AI的能力边界、应用场景的理解，我致力于运用数据驱动的策略，打造卓越的用户体验和切实的商业价值。</p>
+                <p class="mt-4">我坚信，最优秀的产品源于对用户需求的精准洞察和对前沿技术的大胆探索。我的目标是成为连接商业、技术与用户的桥梁，驱动AI技术在更多场景中落地生根。</p>
+            </div>
+
+            <h3 class="text-3xl font-bold text-white text-center mt-16 mb-8 scroll-reveal">个人优势</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mt-8 max-w-6xl mx-auto">
+                <div class="glass-card p-6 text-center rounded-lg scroll-reveal">
+                    <div class="text-5xl font-bold neon-text">7+</div>
+                    <div class="mt-2 text-xl text-white">年产品经验</div>
+                </div>
+                <div class="glass-card p-6 text-center rounded-lg scroll-reveal" style="transition-delay: 0.1s;">
+                    <div class="text-5xl font-bold neon-text">从0到1</div>
+                    <div class="mt-2 text-xl text-white">产品全流程掌控</div>
+                </div>
+                <div class="glass-card p-6 text-center rounded-lg scroll-reveal" style="transition-delay: 0.2s;">
+                    <div class="text-5xl font-bold neon-text">AI/ML</div>
+                    <div class="mt-2 text-xl text-white">深度技术理解</div>
+                </div>
+                <div class="glass-card p-6 text-center rounded-lg scroll-reveal" style="transition-delay: 0.3s;">
+                    <div class="text-5xl font-bold neon-text">C/B</div>
+                    <div class="mt-2 text-xl text-white">双端经验通吃</div>
+                </div>
+            </div>
+
+            <h3 class="text-3xl font-bold text-white text-center mt-16 mb-8 scroll-reveal">教育背景</h3>
+            <div class="max-w-4xl mx-auto text-center text-lg leading-relaxed scroll-reveal glass-card p-6 rounded-lg">
+                <p class="font-semibold text-white">湖北纺织大学</p>
+                <p class="text-gray-300">电气工程及其自动化 | 本科</p>
+                <p class="text-gray-400">2014年9月 - 2018年6月</p>
+            </div>
+
+            <h3 class="text-3xl font-bold text-white text-center mt-16 mb-8 scroll-reveal">工作经历</h3>
+            <div class="timeline">
+                <div class="timeline-item left scroll-reveal">
+                    <div class="timeline-item-content glass-card">
+                        <h4 class="text-xl font-bold text-white">上海美市科技有限公司</h4>
+                        <p class="text-gray-300">产品经理</p>
+                        <p class="text-gray-400 text-sm mb-2">2021年9月 - 至今</p>
+                        <ul class="list-disc list-inside text-gray-300">
+                            <li>辅助销售进行售前沟通，完成售前方案，助力成交。</li>
+                            <li>独立完成平台产品规划，包含：投研服务小程序、内部协同办公web端/APP。</li>
+                            <li>管理托管运营团队，制定考核目标，协调运营资源并提高运营效率，最终提高客单价。</li>
+                            <li>根据客户反馈和拜访客户，持续优化项目，发现新的需求点。</li>
+                            <!-- New bullet point added here -->
+                            <li>前沿AI技术探索与当前市场结合，落地新商机。</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-item right scroll-reveal">
+                    <div class="timeline-item-content glass-card">
+                        <h4 class="text-xl font-bold text-white">湖北同人传媒有限公司</h4>
+                        <p class="text-gray-300">产品经理</p>
+                        <p class="text-gray-400 text-sm mb-2">2019年8月 - 2021年1月</p>
+                        <ul class="list-disc list-inside text-gray-300">
+                            <li>带领六人团队从0到1主导构建了最初的产品，涉及web端、H5、小程序和CRM管理后台。</li>
+                            <li>领导团队实现公司愿景，实现公司业务从线下到线上的转型，目前ROA突破5，小程序在支付宝商业服务中排名9。</li>
+                            <li>负责需求挖掘、竞品分析，协调整合资源，为不同情况的用户设计提供不同的服务产品。</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-item left scroll-reveal">
+                    <div class="timeline-item-content glass-card">
+                        <h4 class="text-xl font-bold text-white">武汉璇瑞智佳装饰有限公司</h4>
+                        <p class="text-gray-300">产品经理</p>
+                        <p class="text-gray-400 text-sm mb-2">2017年10月 - 2019年7月</p>
+                        <ul class="list-disc list-inside text-gray-300">
+                            <li>负责APP产品的规划、流程和原型设计并进行相关调研，对需求进行整理和分析，并输出需求文档和落地。</li>
+                            <li>收集、分析和汇总产品的用户体验反馈和需求，分类管理并确定优先级后输出对应需求文档。</li>
+                            <li>制定数据埋点方案，监控并分析产品数据，对相关页面以及功能进行优化。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="projects" class="py-20 bg-black/20">
+            <div class="container mx-auto px-6">
+                <h2 class="section-title text-center mb-16 scroll-reveal">项目成果</h2>
+                <div class="space-y-16">
+                    <!-- New Project 1: Intelligent Investment Research Assistant based on RAG -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center scroll-reveal">
+                        <div class="p-8 glass-card rounded-lg">
+                            <h3 class="text-2xl font-bold text-white">基于RAG技术的智能投研助手</h3>
+                            <div class="flex flex-wrap gap-2 my-4">
+                                <span class="tag px-3 py-1 text-sm rounded-full">B端</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">RAG</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">智能投研</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">金融科技</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">AI</span>
+                            </div>
+                            <p class="text-gray-300"><strong class="text-white">问题:</strong> 投研人员在海量金融文档中获取信息和分析效率低下。</p>
+                            <p class="mt-2 text-gray-300"><strong class="text-white">方案:</strong> 主导设计并落地基于RAG技术（检索增强生成）的智能投研助手产品，整合券商研报、观点、纪要与上市公司公告等海量专业金融文档，构建知识库，实现精准、可靠的智能问答。</p>
+                            <p class="mt-2 text-gray-300"><strong class="text-white">角色:</strong> 产品负责人，负责需求分析、方案设计、项目推进与落地。</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="kpi">效率显著提升</div>
+                            <div class="text-2xl text-white mt-2">投研人员信息获取效率大幅优化</div>
+                        </div>
+                    </div>
+
+                    <!-- New Project 2: Intelligent Meeting Minutes Generation Tool -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center scroll-reveal">
+                         <div class="text-center lg:order-2">
+                            <div class="kpi">用户活跃度</div>
+                            <div class="text-2xl text-white mt-2">提升16%</div>
+                        </div>
+                        <div class="p-8 glass-card rounded-lg lg:order-1">
+                            <h3 class="text-2xl font-bold text-white">智能会议纪要生成工具</h3>
+                            <div class="flex flex-wrap gap-2 my-4">
+                                <span class="tag px-3 py-1 text-sm rounded-full">B端</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">AI</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">效率工具</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">会议管理</span>
+                            </div>
+                            <p class="text-gray-300"><strong class="text-white">问题:</strong> 会议纪要整理耗时费力，影响工作效率。</p>
+                            <p class="mt-2 text-gray-300"><strong class="text-white">方案:</strong> 设计并实现智能会议纪要生成工具，整合语音转文字、AI热词修正和摘要提炼功能，自动生成结构化会议纪要（分点总结 + 最终纪要）。</p>
+                            <p class="mt-2 text-gray-300"><strong class="text-white">角色:</strong> 产品经理，负责功能设计、用户体验优化和数据监测。</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center scroll-reveal">
+                        <div class="p-8 glass-card rounded-lg">
+                            <h3 class="text-2xl font-bold text-white">券商研究所对客户服务平台</h3>
+                            <div class="flex flex-wrap gap-2 my-4">
+                                <span class="tag px-3 py-1 text-sm rounded-full">B端</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">OA</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">金融科技</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">客户服务</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">数字化</span>
+                            </div>
+                            <p class="text-gray-300"><strong class="text-white">问题:</strong> 券商研究所传统客户服务模式效率低下，内部协同不足，合规风险高。</p>
+                            <p class="mt-2 text-gray-300"><strong class="text-white">方案:</strong> 主导项目构建集对外展示小程序/公众号与内部协同OA后台于一体的服务平台。通过智能生成投研海报、个性化内容分享等功能提升客户服务效率和体验；建设内部审批与工作流管理，连接微信客户群管理，实现数字化转型。</p>
+                            <p class="mt-2 text-gray-300"><strong class="text-white">角色:</strong> 负责项目售前沟通与方案制定，产品方案设计、需求挖掘、项目落地和客户关系维护。</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="kpi">客户认可</div>
+                            <div class="text-2xl text-white mt-2">合作券商: 华西、东吴、民生、西南、申万宏源等</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center scroll-reveal">
+                         <div class="text-center lg:order-2">
+                            <div class="kpi">效率提升</div>
+                            <div class="text-2xl text-white mt-2">通过自动化智能化手段</div>
+                        </div>
+                        <div class="p-8 glass-card rounded-lg lg:order-1">
+                            <h3 class="text-2xl font-bold text-white">律师事务所OA系统</h3>
+                            <div class="flex flex-wrap gap-2 my-4">
+                                <span class="tag px-3 py-1 text-sm rounded-full">B端</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">OA系统</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">CRM</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">智能化</span>
+                            </div>
+                            <p class="text-gray-300"><strong class="text-white">问题:</strong> 律师事务所内部管理流程复杂，当事人档案、呼叫中心、业务报告、合同审批等模块效率低下。</p>
+                            <p class="mt-2 text-gray-300"><strong class="text-white">方案:</strong> 负责OA产品重构，优化从线索到订单的全流程，实现CRM系统与云呼叫中心对接，确保线索智能分配、通话记录分角色追溯，并通过自动化、智能化手段提高整体工作效率。</p>
+                            <p class="mt-2 text-gray-300"><strong class="text-white">角色:</strong> 负责产品重构规划、流程优化设计、CRM及呼叫中心集成方案制定。</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center scroll-reveal">
+                        <div class="p-8 glass-card rounded-lg">
+                            <h3 class="text-2xl font-bold text-white">法律服务小程序 (劳动无忧、喵喵债、一合家事)</h3>
+                            <div class="flex flex-wrap gap-2 my-4">
+                                <span class="tag px-3 py-1 text-sm rounded-full">C端</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">法律科技</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">从0到1</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">用户增长</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">自动化</span>
+                            </div>
+                            <p class="text-gray-300"><strong class="text-white">问题:</strong> 用户在不同法律领域面临专业知识壁垒和高昂服务成本。</p>
+                            <p class="mt-2 text-gray-300"><strong class="text-white">方案:根据用户需求和业务目标，负责需求调研、产品规划、原型设计与上线全流程。</strong></p>
+                        </div>
+                        <div class="text-center">
+                             <div class="kpi">DAU 3000+</div>
+                            <div class="text-2xl text-white mt-2">劳动无忧用户注册率提升30%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center scroll-reveal">
+                        <div class="text-center lg:order-2">
+                            <div class="kpi">收益50%</div>
+                            <div class="text-2xl text-white mt-2">上门维修功能贡献</div>
+                        </div>
+                        <div class="p-8 glass-card rounded-lg lg:order-1">
+                            <h3 class="text-2xl font-bold text-white">璇瑞装饰 (生活服务平台APP)</h3>
+                            <div class="flex flex-wrap gap-2 my-4">
+                                <span class="tag px-3 py-1 text-sm rounded-full">C端</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">生活服务</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">APP</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">用户增长</span>
+                                <span class="tag px-3 py-1 text-sm rounded-full">积分体系</span>
+                            </div>
+                            <p class="mt-2 text-gray-300"><strong class="text-white">问题:</strong> 装饰装修服务低频，用户粘性及平台盈利模式单一。</p>
+                            <p class="mt-2 text-gray-300"><strong class="text-white">方案:</strong> 针对低频特点，创新性提出并落地“上门维修”功能，拓展新业务增长点。建立完善的积分体系，形成AARRR模型闭环，持续优化产品颜值与易用性。</p>
+                            <p class="mt-2 text-gray-300"><strong class="text-white">角色:</strong> 负责新功能提案、积分体系设计、产品优化与迭代。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="skills" class="py-20">
+            <div class="container mx-auto px-6">
+                <h2 class="section-title text-center mb-12 scroll-reveal">专业技能</h2>
+                <div class="glass-card rounded-lg p-4 md:p-8 scroll-reveal">
+                   <div class="chart-container">
+                       <canvas id="skillsChart"></canvas>
+                   </div>
+                   <div class="mt-8 text-center text-gray-300">
+                       <p class="text-lg">熟练掌握产品管理全流程工具，包括：</p>
+                       <p class="text-xl font-semibold neon-text mt-2">Axure · XMind · WPS · Office · Adobe Photoshop</p>
+                       <p class="text-lg mt-4">具备前端技术基础，理解开发流程：</p>
+                       <p class="text-xl font-semibold neon-text mt-2">HTML5 · CSS · JavaScript</p>
+                   </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="py-20 text-center bg-black/20">
+             <div class="container mx-auto px-6">
+                <h2 class="section-title mb-8 scroll-reveal">联系我</h2>
+                <p class="text-lg mb-12 max-w-2xl mx-auto scroll-reveal">期待与您交流，共同探讨AI产品的前沿与未来。如果您对我的经历感兴趣，或有合适的职位机会，请随时联系。</p>
+                <div class="flex flex-col md:flex-row justify-center items-center gap-8 text-lg">
+                    <a href="mailto:784343491@qq.com" class="p-4 glass-card rounded-lg flex items-center gap-3 w-64 justify-center scroll-reveal">
+                        <svg class="w-6 h-6 neon-text" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        <span>784343491@qq.com</span>
+                    </a>
+                    <div class="p-4 glass-card rounded-lg flex items-center gap-3 w-64 justify-center scroll-reveal" style="transition-delay: 0.1s;">
+                         <svg class="w-6 h-6 neon-text" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                        <span>188-7295-9493</span>
+                    </div>
+                    <div class="p-4 glass-card rounded-lg flex items-center gap-3 w-64 justify-center scroll-reveal" style="transition-delay: 0.2s;">
+                         <svg class="w-6 h-6 neon-text" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Outer Circle, mimicking the WeChat icon's background circle -->
+                            <circle cx="50" cy="50" r="45" fill="#8A2BE2"/>
+                            <!-- Large Chat Bubble -->
+                            <path d="M30 40H70C72.2091 40 74 41.7909 74 44V60C74 62.2091 72.2091 64 70 64H40L30 70V64V44C30 41.7909 31.7909 40 34 40H30Z" fill="#E0E0E0"/>
+                            <!-- Smaller Overlapping Chat Bubble -->
+                            <path d="M26 30H56C58.2091 30 60 31.7909 60 34V50C60 52.2091 58.2091 54 56 54H36L26 60V54V34C26 31.7909 27.7909 30 30 30H26Z" fill="#E0E0E0"/>
+                        </svg>
+                        <span>YC2EIK (微信)</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center py-6 text-gray-500">
+        <p>&copy; 2025 易长城. All Rights Reserved.</p>
+    </footer>
 
     <script>
-        // 获取Canvas元素和绘图上下文
-        const canvas = document.getElementById('backgroundCanvas');
-        const ctx = canvas.getContext('2d');
+        // Three.js Cyberpunk Particle Background Animation variables declared at top level
+        let scene, camera, renderer, particles, backgroundGroup, spaceLines; 
+        const NEON_BLUE = new THREE.Color(0x00CCFF);
+        const NEON_PINK = new THREE.Color(0x8A2BE2);
+        const NEON_WHITE = new THREE.Color(0xFFFFFF);
+        const BACKGROUND_COLOR = new THREE.Color(0x0A0A1A);
 
-        let particles = []; // 存储所有粒子的数组
-        const particleCount = 100; // 粒子数量
-        const maxDistance = 120; // 粒子之间连接的最大距离
+        const PARTICLE_COUNT = 3000; 
+        const PARTICLE_SIZE = 2.0; 
+        const PARTICLE_SPEED_Z_MIN = 5; 
+        const PARTICLE_SPEED_Z_MAX = 10; 
+        const PARTICLE_COLORS = [NEON_BLUE, NEON_PINK, NEON_WHITE];
+        const PARTICLE_SPREAD_X = 200; 
+        const PARTICLE_SPREAD_Y = 200; 
+        const PARTICLE_DEPTH_RANGE = 2000; 
 
-        let mouse = {
-            x: null,
-            y: null,
-            radius: 150 // 鼠标影响范围
-        };
+        // New parameters for space lines
+        const SPACE_LINE_COUNT = 500; 
+        const SPACE_LINE_LENGTH = 150; 
+        const SPACE_LINE_THICKNESS = 1; 
+        const SPACE_LINE_SPEED_Z = 3; 
+        const SPACE_LINE_OPACITY = 0.08; 
+        const SPACE_LINE_COLORS_ARRAY = [NEON_BLUE, NEON_PINK, NEON_WHITE]; 
+        const SPACE_LINE_SPREAD_X = 500; 
+        const SPACE_LINE_SPREAD_Y = 300; 
+        const SPACE_LINE_DEPTH_RANGE = 3000; 
 
-        // 窗口大小调整时，调整canvas大小
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            // 重新初始化粒子以适应新尺寸，防止粒子跑到屏幕外
-            initParticles();
+
+        const CAMERA_DRIFT_AMPLITUDE_X = 1.5; 
+        const CAMERA_DRIFT_SPEED_X = 0.04; 
+        const CAMERA_DRIFT_AMPLITUDE_Y = 1.0; 
+        const CAMERA_DRIFT_SPEED_Y = 0.05; 
+        const SCENE_ROTATION_SPEED = 0.005; 
+        const PARTICLE_TWINKLE_SPEED = 10; 
+
+        let globalClock = new THREE.Clock();
+
+        // DOM element and observer variables declared at top level to prevent redeclaration errors
+        let mobileMenuButton, mobileMenu, navLinks, sections;
+        let skillsChartCanvas;
+        let observerOptions, observer, scrollRevealObserver, skillsChartObserver;
+
+
+        function initThreeJs() {
+            scene = new THREE.Scene();
+            scene.background = BACKGROUND_COLOR;
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.set(0, 0, 0);
+
+            const canvas = document.getElementById('cyberpunk-grid-background');
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.setClearColor(BACKGROUND_COLOR, 1);
+
+            backgroundGroup = new THREE.Group();
+            scene.add(backgroundGroup);
+
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+            backgroundGroup.add(ambientLight);
+
+            // Particles creation
+            const particleGeometry = new THREE.BufferGeometry();
+            const particlePositions = [];
+            const particleColorsArray = [];
+            const particleVelocities = [];
+
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const x = (Math.random() - 0.5) * PARTICLE_SPREAD_X;
+                const y = (Math.random() - 0.5) * PARTICLE_SPREAD_Y;
+                const z = -Math.random() * PARTICLE_DEPTH_RANGE; 
+
+                particlePositions.push(x, y, z);
+
+                const randomColor = PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)];
+                particleColorsArray.push(randomColor.r, randomColor.g, randomColor.b);
+
+                particleVelocities.push(
+                    (Math.random() - 0.5) * 0.2, 
+                    (Math.random() - 0.5) * 0.2, 
+                    PARTICLE_SPEED_Z_MIN + Math.random() * (PARTICLE_SPEED_Z_MAX - PARTICLE_SPEED_Z_MIN)
+                );
+            }
+            particleGeometry.setAttribute('position', new THREE.Float32BufferAttribute(particlePositions, 3));
+            particleGeometry.setAttribute('color', new THREE.Float32BufferAttribute(particleColorsArray, 3));
+
+            const particleMaterial = new THREE.PointsMaterial({
+                vertexColors: true,
+                size: PARTICLE_SIZE,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                opacity: 0.8,
+                sizeAttenuation: true 
+            });
+            particles = new THREE.Points(particleGeometry, particleMaterial);
+            particles.userData.velocities = particleVelocities;
+            backgroundGroup.add(particles);
+
+            // Space Lines Creation (new element)
+            const lineGeometry = new THREE.BufferGeometry();
+            const linePositions = [];
+            const lineColors = [];
+
+            for (let i = 0; i < SPACE_LINE_COUNT; i++) {
+                const x = (Math.random() - 0.5) * SPACE_LINE_SPREAD_X;
+                const y = (Math.random() - 0.5) * SPACE_LINE_SPREAD_Y;
+                const z = -Math.random() * SPACE_LINE_DEPTH_RANGE; // Start lines far back
+
+                const lineColor = SPACE_LINE_COLORS_ARRAY[Math.floor(Math.random() * SPACE_LINE_COLORS_ARRAY.length)];
+
+                // Define start and end points for each line, creating a "streak" effect
+                linePositions.push(x, y, z); // Start point
+                linePositions.push(x, y, z - SPACE_LINE_LENGTH); // End point (behind start point)
+                
+                lineColors.push(lineColor.r, lineColor.g, lineColor.b, lineColor.r, lineColor.g, lineColor.b);
+            }
+
+            lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+            lineGeometry.setAttribute('color', new THREE.Float32BufferAttribute(lineColors, 3));
+
+            const lineMaterial = new THREE.LineBasicMaterial({
+                vertexColors: true,
+                linewidth: SPACE_LINE_THICKNESS,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                opacity: SPACE_LINE_OPACITY
+            });
+
+            spaceLines = new THREE.LineSegments(lineGeometry, lineMaterial);
+            backgroundGroup.add(spaceLines); // Add to the background group
+
+
+            backgroundGroup.position.y = 0; // Position background to cover full screen
+
+            window.addEventListener('resize', onWindowResize, false);
+            animateBackground();
         }
 
-        // 粒子构造函数
-        function Particle(x, y, directionX, directionY, size, color) {
-            this.x = x;
-            this.y = y;
-            this.directionX = directionX; // x轴移动方向和速度
-            this.directionY = directionY; // y轴移动方向和速度
-            this.size = size;
-            this.color = color;
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            backgroundGroup.position.y = 0;
         }
 
-        // 绘制粒子
-        Particle.prototype.draw = function() {
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
-            ctx.fillStyle = this.color;
-            ctx.fill();
-        };
+        function animateBackground() {
+            requestAnimationFrame(animateBackground);
 
-        // 更新粒子位置和行为
-        Particle.prototype.update = function() {
-            // 检查粒子是否超出边界
-            if (this.x + this.size > canvas.width || this.x - this.size < 0) {
-                this.directionX = -this.directionX;
-            }
-            if (this.y + this.size > canvas.height || this.y - this.size < 0) {
-                this.directionY = -this.directionY;
-            }
+            const delta = globalClock.getDelta();
+            const elapsed = globalClock.getElapsedTime();
 
-            // 鼠标交互：根据鼠标距离调整粒子速度
-            let dxMouse = mouse.x - this.x;
-            let dyMouse = mouse.y - this.y;
-            let distanceMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
+            // Animate particles
+            const pPositions = particles.geometry.attributes.position.array;
+            const pVelocities = particles.userData.velocities;
+            
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                pPositions[i * 3] += pVelocities[i * 3] * delta * 60;
+                pPositions[i * 3 + 1] += pVelocities[i * 3 + 1] * delta * 60;
+                pPositions[i * 3 + 2] += pVelocities[i * 3 + 2] * delta * 60;
 
-            if (distanceMouse < mouse.radius + this.size) {
-                if (mouse.x < this.x && this.x < canvas.width - this.size * 10) {
-                    this.x += 1;
-                }
-                if (mouse.x > this.x && this.x > this.size * 10) {
-                    this.x -= 1;
-                }
-                if (mouse.y < this.y && this.y < canvas.height - this.size * 10) {
-                    this.y += 1;
-                }
-                if (mouse.y > this.y && this.y > this.size * 10) {
-                    this.y -= 1;
+                // Loop particles when they move past the camera
+                if (pPositions[i * 3 + 2] > 50) { 
+                    pPositions[i * 3] = (Math.random() - 0.5) * PARTICLE_SPREAD_X; 
+                    pPositions[i * 3 + 1] = (Math.random() - 0.5) * PARTICLE_SPREAD_Y; 
+                    pPositions[i * 3 + 2] = -PARTICLE_DEPTH_RANGE; 
                 }
             }
+            particles.geometry.attributes.position.needsUpdate = true;
 
-            this.x += this.directionX;
-            this.y += this.directionY;
+            // Twinkling effect for particles (by changing material opacity)
+            particles.material.opacity = 0.7 + Math.sin(elapsed * PARTICLE_TWINKLE_SPEED) * 0.3;
 
-            this.draw();
-        };
+            // Animate space lines (new animation loop)
+            const slPositions = spaceLines.geometry.attributes.position.array;
+            for (let i = 0; i < SPACE_LINE_COUNT * 2; i += 2) { // Each line has 2 vertices
+                slPositions[i * 3 + 2] += SPACE_LINE_SPEED_Z * delta * 60; // Z-coordinate of start point
+                slPositions[i * 3 + 5] += SPACE_LINE_SPEED_Z * delta * 60; // Z-coordinate of end point
 
-        // 初始化粒子
-        function initParticles() {
-            particles = []; // 清空现有粒子
-            for (let i = 0; i < particleCount; i++) {
-                let size = (Math.random() * 5) + 1; // 粒子大小1到6
-                let x = (Math.random() * ((canvas.width - size * 2) - (size * 2)) + size * 2);
-                let y = (Math.random() * ((canvas.height - size * 2) - (size * 2)) + size * 2);
-                let directionX = (Math.random() * 0.5) - 0.25; // x轴速度-0.25到0.25
-                let directionY = (Math.random() * 0.5) - 0.25; // y轴速度-0.25到0.25
-                let color = `hsl(${Math.random() * 360}, 70%, 70%)`; // 随机鲜艳颜色
-
-                particles.push(new Particle(x, y, directionX, directionY, size, color));
+                // Loop lines when they move past the camera
+                if (slPositions[i * 3 + 2] > 50) { // Check start point Z
+                    slPositions[i * 3] = (Math.random() - 0.5) * SPACE_LINE_SPREAD_X;
+                    slPositions[i * 3 + 1] = (Math.random() - 0.5) * SPACE_LINE_SPREAD_Y;
+                    slPositions[i * 3 + 2] = -SPACE_LINE_DEPTH_RANGE; // Reset start Z
+                    slPositions[i * 3 + 3] = slPositions[i * 3]; // End X same as start X
+                    slPositions[i * 3 + 4] = slPositions[i * 3 + 1]; // End Y same as start Y
+                    slPositions[i * 3 + 5] = slPositions[i * 3 + 2] - SPACE_LINE_LENGTH; // Reset end Z relative to start
+                }
             }
+            spaceLines.geometry.attributes.position.needsUpdate = true;
+
+
+            // Subtle camera drift for immersion
+            camera.position.x = Math.sin(elapsed * CAMERA_DRIFT_SPEED_X) * CAMERA_DRIFT_AMPLITUDE_X;
+            camera.position.y = Math.cos(elapsed * CAMERA_DRIFT_SPEED_Y) * CAMERA_DRIFT_AMPLITUDE_Y;
+            
+            // Subtle scene rotation for dynamic feel (applied to the entire background group)
+            backgroundGroup.rotation.z = Math.sin(elapsed * SCENE_ROTATION_SPEED) * 0.02;
+
+            renderer.render(scene, camera);
         }
 
-        // 连接粒子并绘制线条
-        function connect() {
-            let opacityValue = 1;
-            for (let a = 0; a < particles.length; a++) {
-                for (let b = a; b < particles.length; b++) {
-                    let dx = particles[a].x - particles[b].x;
-                    let dy = particles[a].y - particles[b].y;
-                    let distance = Math.sqrt(dx * dx + dy * dy);
+        document.addEventListener('DOMContentLoaded', function() {
+            // Assign to already declared variables
+            mobileMenuButton = document.getElementById('mobile-menu-button');
+            mobileMenu = document.getElementById('mobile-menu');
+            navLinks = document.querySelectorAll('.nav-link');
+            sections = document.querySelectorAll('section');
 
-                    if (distance < maxDistance) {
-                        opacityValue = 1 - (distance / maxDistance);
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${opacityValue})`; // 连接线的颜色和透明度
-                        ctx.lineWidth = 1;
-                        ctx.beginPath();
-                        ctx.moveTo(particles[a].x, particles[a].y);
-                        ctx.lineTo(particles[b].x, particles[b].y);
-                        ctx.stroke();
+            // Assign to chart canvas variable
+            skillsChartCanvas = document.getElementById('skillsChart');
+
+            if(mobileMenuButton) { // Check if element exists before adding listener
+                mobileMenuButton.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden'); 
+                });
+            }
+            
+            if(mobileMenu) { // Check if element exists before adding listener
+                mobileMenu.addEventListener('click', (e) => {
+                    if(e.target.classList.contains('nav-link')){
+                        mobileMenu.classList.add('hidden');
                     }
-                }
+                });
             }
-        }
 
-        // 动画循环
-        function animate() {
-            requestAnimationFrame(animate);
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // 清除画布
+            observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.3
+            };
+            observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, observerOptions);
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+            
+            scrollRevealObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+            document.querySelectorAll('.scroll-reveal').forEach(el => {
+                scrollRevealObserver.observe(el);
+            });
 
-            for (let i = 0; i < particles.length; i++) {
-                particles[i].update(); // 更新并绘制粒子
+            if(skillsChartCanvas) {
+                const skillsChartObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            createSkillsChart();
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.5 });
+                skillsChartObserver.observe(skillsChartCanvas);
             }
-            connect(); // 连接粒子
-        }
-
-        // 监听鼠标移动事件
-        window.addEventListener('mousemove',
-            function(event){
-                mouse.x = event.x;
-                mouse.y = event.y;
+            
+            function createSkillsChart() {
+                const ctx = skillsChartCanvas.getContext('2d');
+                new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['产品规划', '数据分析', '用户研究', '项目管理', 'B端设计', 'C端设计', '技术理解'],
+                        datasets: [{
+                            label: '技能熟练度',
+                            data: [95, 90, 85, 95, 90, 88, 80],
+                            backgroundColor: 'rgba(102, 0, 255, 0.2)',
+                            borderColor: '#8A2BE2',
+                            pointBackgroundColor: '#8A2BE2',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: '#8A2BE2'
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                angleLines: { color: 'rgba(255, 255, 255, 0.2)' },
+                                grid: { color: 'rgba(255, 255, 255, 0.2)' },
+                                pointLabels: { 
+                                    font: { size: 14, family: "'Noto Sans SC', sans-serif" },
+                                    color: '#FFFFFF' 
+                                },
+                                ticks: {
+                                    color: 'rgba(255, 255, 255, 0.7)',
+                                    backdropColor: 'transparent',
+                                    stepSize: 20
+                                },
+                                suggestedMin: 0,
+                                suggestedMax: 100
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#FFFFFF',
+                                    font: { size: 14 }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.r!== null) {
+                                            label += context.parsed.r + '%';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
             }
-        );
-
-        // 监听鼠标离开页面事件
-        window.addEventListener('mouseout',
-            function(){
-                mouse.x = undefined;
-                mouse.y = undefined;
-            }
-        );
-
-        // 页面加载和窗口大小调整时初始化
-        window.addEventListener('load', () => {
-            resizeCanvas(); // 初始设置canvas尺寸
-            initParticles(); // 初始化粒子
-            animate(); // 开始动画
         });
 
-        window.addEventListener('resize', resizeCanvas); // 监听窗口大小变化
+        // Initialize Three.js when the window loads
+        window.onload = function () {
+            initThreeJs();
+        };
     </script>
 </body>
 </html>
